@@ -36,7 +36,8 @@ async function checkTicketComments(ticketID, app) { // gets the comments of the 
         //console.log(data);
 
         // Count only the actual communications
-        const actualCommunicationsCount = data.entries.filter(entry => entry.type < 3).length;
+        const actualCommunicationsCount = data.entries.filter(
+            entry => ((entry.type <= 2) || (entry.type >= 4))).length;
 
         return actualCommunicationsCount > 0; // Return true if there are actual communications
     } catch (error) {
