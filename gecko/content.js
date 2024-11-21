@@ -1,10 +1,10 @@
-let cache = {}
+let cache = {};
 
 async function checkTicketComments(ticketID, app) { // gets the comments of the ticket to determine how new it is
     //console.log(cache);
     if (cache[ticketID] == true) { // if it's already newish then there's no point in checking again
-        return cache[ticketID];
-    }
+        var comments = cache[ticketID];
+    } else {
     const currentPath = window.location.pathname;
     const pathSegments = currentPath.split('/').filter(segment => segment);
     const newPathSegments = pathSegments.slice(0, pathSegments.length - 3);
@@ -45,15 +45,22 @@ async function checkTicketComments(ticketID, app) { // gets the comments of the 
         const actualCommunicationsCount = data.entries.filter(
             entry => ((entry.type <= 2) || (entry.type >= 5))).length;
 
-        return actualCommunicationsCount > 0; // Return true if there are actual communications
+        
+        var comments = actualCommunicationsCount > 0; // Return true if there are actual communications
     } catch (error) {
         console.error('Error fetching ticket comments:', error);
-        return false; // Default to no comments on error
-    }
+        var comments = false;
+    }}
+    cache[ticketID] = comments;
+    return comments;
 }
+
+let updating = false;
 
 // Function to update the ticket rows
 async function updateTicketRows() {
+    if (updating) {return;}
+    updating = true;
     const rows = document.getElementsByTagName('tr'); // Select all rows in the table
     for (const row of rows) {
         const ticketLink = row.querySelector('td a[href*="TicketDet"]');
@@ -65,12 +72,45 @@ async function updateTicketRows() {
                 const statusCell = row.querySelector('td:nth-child(4)');
                 if (statusCell && statusCell.textContent.trim() === 'New') { // only update if it's marked as New
                     const hasComments = await checkTicketComments(ticketID, app);
-                    cache[ticketID] = hasComments;
                     statusCell.textContent = hasComments ? 'Newish' : 'New!';
                 }
             }
         }
     }
+    const assignments = document.getElementsByClassName("col-sm-8");
+    for (const assignment of assignments) {
+        if (assignment.style.width != "50%") {
+            assignment.style.width = "50%";
+            const attribute = assignment.nextElementSibling;
+            const newAttribute = attribute.cloneNode(true);
+            newAttribute.querySelector('span').textContent = "Status";
+            newAttribute.childNodes[3].textContent = "...";
+            attribute.parentElement.insertBefore(newAttribute, attribute);
+        }
+        //const status = assignment.nextElementSibling;
+        //status.querySelector('span').textContent = "Status"
+        ////status.textContent = ""
+        //const ticketID = new URL(assignment.querySelector('a').href).searchParams.get('TicketID')
+    }
+    for (const assignment of assignments) {
+        const attribute = assignment.nextElementSibling;
+        if (attribute.childNodes[3].textContent.trim() === "...") {
+            const ticketLink = assignment.querySelector('a').href;
+            const response = await fetch(ticketLink);
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            let status = doc.getElementById("thTicket_lblStatus").textContent;
+            if (status.trim() === 'New') {
+                const ticketID = new URL(ticketLink).searchParams.get('TicketID');
+                const app = Number(ticketLink.split('/')[5]);
+                const hasComments = await checkTicketComments(ticketID, app);
+                status = hasComments ? 'Newish' : 'New!';
+            }
+            attribute.childNodes[3].textContent = status;
+        }
+    }
+    updating = false;
 }
 
 // Set up a MutationObserver to watch for changes in the DOM
@@ -86,6 +126,5 @@ observer.observe(document.body, {
 });
 
 document.addEventListener("DOMContentLoaded", (event) => {
-    //console.log("loaded");
     updateTicketRows();
 });

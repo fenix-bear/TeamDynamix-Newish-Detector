@@ -1,12 +1,12 @@
 {
     "manifest_version": 3,
     "name": "TeamDynamix Newish Detector",
-    "version": "1.4",
+    "version": "1.5",
     "description": "Increases granularity in the \"New\" ticket status by showing if it has been replied to.",
     "permissions": [],
     "content_scripts": [
         {
-            "matches": ["*://*/TDNext/Home/Desktop/*.aspx", "*://*/TDNext/Apps/*/Tickets/Default.aspx"],
+            "matches": ["*://*/TDNext/Home/Desktop/*.aspx"],
             "js": ["content.js"],
             "run_at": "document_end",
             "all_frames": true
