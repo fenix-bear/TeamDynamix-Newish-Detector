@@ -43,10 +43,13 @@ async function checkTicketComments(ticketID, app) { // gets the comments of the 
 
         // Count only the actual communications
         const actualCommunicationsCount = data.entries.filter(
-            entry => ((entry.type <= 2) || (entry.type >= 5))).length;
-
+            entry => ((entry.type <= 2))).length;
         
-        var comments = actualCommunicationsCount > 0; // Return true if there are actual communications
+        const worklistToggled = data.entries.filter(
+            entry => ((entry.type == 5))
+        ).length % 2;
+        
+        var comments = actualCommunicationsCount + worklistToggled > 0; // Return true if there are actual communications
     } catch (error) {
         console.error('Error fetching ticket comments:', error);
         var comments = false;
